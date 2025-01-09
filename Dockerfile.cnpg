@@ -1,0 +1,23 @@
+FROM ghcr.io/cloudnative-pg/postgresql-trunk:18-cf-4913 AS builder
+
+USER 0
+
+COPY . /tmp/pgvector
+
+RUN set -eux; \
+	mkdir -p /opt/extension && \
+	apt-get update && \
+	apt-get install -y --no-install-recommends build-essential clang-16 llvm-16-dev && \
+	cd /tmp/pgvector && \
+	make clean && \
+	make OPTFLAGS="" && \
+	make install datadir=/opt/extension/share/ pkglibdir=/opt/extension/lib/ && \
+	apt-get remove -y build-essential && \
+	apt-get autoremove -y && \
+	rm -r /tmp/pgvector && \
+	rm -rf /var/lib/apt/lists/*
+
+FROM scratch
+
+COPY --from=builder /opt/extension/lib/* /lib/
+COPY --from=builder /opt/extension/share/extension/* /share/
