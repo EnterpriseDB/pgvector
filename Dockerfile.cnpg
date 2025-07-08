@@ -1,4 +1,4 @@
-FROM ghcr.io/cloudnative-pg/postgresql-trunk:18-devel AS builder
+FROM ghcr.io/cloudnative-pg/postgresql:18beta1-minimal-bookworm AS builder
 
 USER 0
 
@@ -7,7 +7,7 @@ COPY . /tmp/pgvector
 RUN set -eux; \
 	mkdir -p /opt/extension && \
 	apt-get update && \
-	apt-get install -y --no-install-recommends build-essential clang-16 llvm-16-dev && \
+	apt-get install -y --no-install-recommends build-essential clang-16 llvm-16-dev "postgresql-server-dev-18=18~beta1*" && \
 	cd /tmp/pgvector && \
 	make clean && \
 	make OPTFLAGS="" && \
@@ -15,5 +15,5 @@ RUN set -eux; \
 
 FROM scratch
 
-COPY --from=builder /opt/extension/lib/* /lib/
-COPY --from=builder /opt/extension/share/extension/* /share/
+COPY --from=builder /opt/extension/lib/ /lib/
+COPY --from=builder /opt/extension/share/ /share/
